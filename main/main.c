@@ -2,15 +2,23 @@
  * LED blink with FreeRTOS
  */
 #include <FreeRTOS.h>
-#include <task.h>
-#include <semphr.h>
+#include <hardware/gpio.h>
 #include <queue.h>
+#include <semphr.h>
+#include <task.h>
+#include <time.h>
 
-#include "ssd1306.h"
 #include "gfx.h"
+#include "ssd1306.h"
 
 #include "pico/stdlib.h"
 #include <stdio.h>
+
+#include "hardware/rtc.h"
+#include "hardware/timer.h"
+#include "hardware/uart.h"
+#include "pico/stdlib.h"
+#include "pico/util/datetime.h"
 
 const uint BTN_1_OLED = 28;
 const uint BTN_2_OLED = 26;
@@ -19,6 +27,12 @@ const uint BTN_3_OLED = 27;
 const uint LED_1_OLED = 20;
 const uint LED_2_OLED = 21;
 const uint LED_3_OLED = 22;
+
+#define TRIG_PIN 7
+#define ECHO_PIN 8
+
+SemaphoreHandle_t xSemaphore = NULL;
+SemaphoreHandle_t xSemaphoreTimeDiff = NULL;
 
 void oled1_btn_led_init(void) {
     gpio_init(LED_1_OLED);
@@ -127,7 +141,8 @@ void oled1_demo_2(void *p) {
 int main() {
     stdio_init_all();
 
-    xTaskCreate(oled1_demo_2, "Demo 2", 4095, NULL, 1, NULL);
+    xTaskCreate(oled1_demo_1, "Demo 1", 4095, NULL, 1, NULL);
+    //xTaskCreate(oled1_demo_2, "Demo 2", 4095, NULL, 1, NULL);
 
     vTaskStartScheduler();
 
