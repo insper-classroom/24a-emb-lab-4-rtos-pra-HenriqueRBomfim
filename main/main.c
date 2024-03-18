@@ -73,7 +73,7 @@ void oled_task(void *pvParameters) {
     gfx_init(&disp, 128, 32);
 
     while (1) {
-        char str_distance[20], time_str[20], progress_str[34];
+        char str_distance[20], progress_str[34];
         uint32_t distance;
         if (xQueueReceive(xQueueDistance, &distance, 0) == pdFALSE) {
             sprintf(str_distance, "Dist: ERRO");
@@ -81,6 +81,9 @@ void oled_task(void *pvParameters) {
             if (xSemaphoreTake(xSemaphoreTrigger, pdMS_TO_TICKS(1000)) == pdTRUE) {
                 xQueueReceive(xQueueDistance, &distance, portMAX_DELAY);
                 sprintf(str_distance, "Dist: %d cm", distance);
+                int progress = (distance > 21) ? 21 : distance;
+                memset(progress_str, '-', progress);
+                progress_str[progress] = '\0';
             } else {
                 strcpy(str_distance, "Dist: null");
             }
@@ -88,7 +91,7 @@ void oled_task(void *pvParameters) {
 
         gfx_clear_buffer(&disp);
         gfx_draw_string(&disp, 0, 0, 1, str_distance);
-        gfx_draw_line(&disp, 0, 20, distance, 20);
+        gfx_draw_string(&disp, 0, 20, 1, progress_str);
         printf("%s\n", str_distance);
         printf("%s\n", progress_str);
         vTaskDelay(pdMS_TO_TICKS(1000));
