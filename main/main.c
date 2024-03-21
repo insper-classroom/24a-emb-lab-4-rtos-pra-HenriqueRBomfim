@@ -56,11 +56,16 @@ void trigger_task(void *pvParameters) {
 void echo_task(void *pvParameters) {
     uint32_t time_diff;
     while (1) {
-        xQueueReceive(xQueueTime, &time_diff, portMAX_DELAY);
-        printf("Dist: %d cm\n", time_diff / 58);
-        uint32_t distance = time_diff / 58;
-        xQueueReset(xQueueDistance);
-        xQueueSend(xQueueDistance, &distance, portMAX_DELAY);
+        if (xQueueReceive(xQueueTime, &time_diff, pdMS_TO_TICKS(1000))){
+            printf("Dist: %d cm\n", time_diff / 58);
+            uint32_t distance = time_diff / 58;
+            xQueueReset(xQueueDistance);
+            xQueueSend(xQueueDistance, &distance, portMAX_DELAY);
+        } else {
+            int distance = 100000;
+            xQueueReset(xQueueDistance);
+            xQueueSend(xQueueDistance, &distance, portMAX_DELAY);
+        }
     }
 }
 
@@ -80,10 +85,14 @@ void oled_task(void *pvParameters) {
         } else {
             if (xSemaphoreTake(xSemaphoreTrigger, pdMS_TO_TICKS(1000)) == pdTRUE) {
                 xQueueReceive(xQueueDistance, &distance, portMAX_DELAY);
-                sprintf(str_distance, "Dist: %d cm", distance);
-                int progress = (distance > 21) ? 21 : distance;
-                memset(progress_str, '-', progress);
-                progress_str[progress] = '\0';
+                if (distance > 800){
+                    sprintf(str_distance, "Dist: ERRO");
+                } else {
+                    sprintf(str_distance, "Dist: %d cm", distance);
+                    int progress = (distance > 21) ? 21 : distance;
+                    memset(progress_str, '-', progress);
+                    progress_str[progress] = '\0';
+                }
             } else {
                 strcpy(str_distance, "Dist: null");
             }
